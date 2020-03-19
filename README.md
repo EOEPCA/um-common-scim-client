@@ -30,8 +30,6 @@
 </p>
 
 ## Setup this template!
-- Edit setup.py to fit your repository
-- Replace code and requirements.txt in src by your own! Make sure to use pytest, or replace it in the .travis.yml to use the correct testing suite 
 - Generate a new token in PyPi account exclusively for this library
 
 - setup the following variables (in travis webpage, for this project) to ensure travis automated CI works (https://travis-ci.com/github/EOEPCA/<project>/settings):

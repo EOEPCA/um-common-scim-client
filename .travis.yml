@@ -4,8 +4,8 @@ python: 3.6.9
 jobs:
   include:
     - stage: Testing
-      install: pip install -r PyLibraryTemplate/requirements.txt
-      script: pytest PyLibraryTemplate/tests
+      install: pip install -r eoepca-scim/requirements.txt
+      script: pytest eoepca-scim/tests
 
 deploy:
   provider: pypi
@@ -13,7 +13,7 @@ deploy:
   password: $TOKEN_PYPI
   on:
     all_branches: true
-    tags: true
+    tags: false
   skip_existing: true
 
 #notifications:
