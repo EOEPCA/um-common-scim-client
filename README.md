@@ -1,7 +1,7 @@
 <!--
 ***
 *** To avoid retyping too much info. Do a search and replace for the following:
-*** um-pylibrary-template, PyLibraryTemplate
+*** um-common-scim-client, eoepca-scim
 -->
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
@@ -13,34 +13,21 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/EOEPCA/um-pylibrary-template">
+  <a href="https://github.com/EOEPCA/um-common-scim-client">
   </a>
 
-  <h3 align="center">PyLibraryTemplate</h3>
+  <h3 align="center">eoepca-scim</h3>
 
   <p align="center">
     Template for developing an EOEPCA Library
     <br />
-    <a href="https://github.com/EOEPCA/um-pylibrary-template"><strong>Explore the docs</strong></a>
+    <a href="https://github.com/EOEPCA/um-common-scim-client"><strong>Explore the docs</strong></a>
     .
-    <a href="https://github.com/EOEPCA/um-pylibrary-template/issues">Report Bug</a>
+    <a href="https://github.com/EOEPCA/um-common-scim-client/issues">Report Bug</a>
     ·
-    <a href="https://github.com/EOEPCA/um-pylibrary-template/issues">Request Feature</a>
+    <a href="https://github.com/EOEPCA/um-common-scim-client/issues">Request Feature</a>
   </p>
 </p>
-
-## Setup this template!
-- Generate a new token in PyPi account exclusively for this library
-
-- setup the following variables (in travis webpage, for this project) to ensure travis automated CI works (https://travis-ci.com/github/EOEPCA/<project>/settings):
-    1. GH_REPOS_NAME (this repo's name)
-    2. GH_USER_NAME (GitHub name for the responsible of this module)
-    3. GH_USER_EMAIL (GitHub email for the responsible of this module)
-    4. TOKEN_PYPI (Token you created in a previous step)
-
-- Un-comment the "notifications" segment in .travis.yml, and input the correct data for slack and/or emails you want to notify
-
-- Edit readme to fit your repository, deleting this part!
 
 ## Table of Contents
 
@@ -84,22 +71,22 @@ This is an example of how to list things you need to use the software and how to
 Just download the library using pip
 
 ```sh
-pip install PyLibraryTemplate
+pip install eoepca-scim
 ```
 
 ### Testing
 
 ```sh
-pytest PyLibraryTemplate/tests
+pytest eoepca-scim/tests
 ```
 
 ## Documentation & Usage
 
-The component documentation can be found at https://eoepca.github.io/um-pylibrary-template/.
+The component documentation can be found at https://eoepca.github.io/um-common-scim-client/.
 
 ## Roadmap
 
-See the [open issues](https://github.com/EOEPCA/um-pylibrary-template/issues) for a list of proposed features (and known issues).
+See the [open issues](https://github.com/EOEPCA/um-common-scim-client/issues) for a list of proposed features (and known issues).
 
 ## Contributing
 
@@ -119,21 +106,21 @@ Distributed under the Apache-2.0 License. See `LICENSE` for more information.
 
 [EOEPCA mailbox](eoepca.systemteam@telespazio.com)
 
-Project Link: [https://github.com/EOEPCA/um-pylibrary-template](https://github.com/EOEPCA/um-pylibrary-template)
+Project Link: [https://github.com/EOEPCA/um-common-scim-client](https://github.com/EOEPCA/um-common-scim-client)
 
 ## Acknowledgements
 
 - README.md is based on [this template](https://github.com/othneildrew/Best-README-Template) by [Othneil Drew](https://github.com/othneildrew).
 
 
-[contributors-shield]: https://img.shields.io/github/contributors/EOEPCA/um-pylibrary-template.svg?style=flat-square
-[contributors-url]: https://github.com/EOEPCA/um-pylibrary-template/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/EOEPCA/um-pylibrary-template.svg?style=flat-square
-[forks-url]: https://github.com/EOEPCA/um-pylibrary-template/network/members
-[stars-shield]: https://img.shields.io/github/stars/EOEPCA/um-pylibrary-template.svg?style=flat-square
-[stars-url]: https://github.com/EOEPCA/um-pylibrary-template/stargazers
-[issues-shield]: https://img.shields.io/github/issues/EOEPCA/um-pylibrary-template.svg?style=flat-square
-[issues-url]: https://github.com/EOEPCA/um-pylibrary-template/issues
-[license-shield]: https://img.shields.io/github/license/EOEPCA/um-pylibrary-template.svg?style=flat-square
-[license-url]: https://github.com/EOEPCA/um-pylibrary-template/blob/master/LICENSE
-[build-shield]: https://www.travis-ci.com/EOEPCA/um-pylibrary-template.svg?branch=master
+[contributors-shield]: https://img.shields.io/github/contributors/EOEPCA/um-common-scim-client.svg?style=flat-square
+[contributors-url]: https://github.com/EOEPCA/um-common-scim-client/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/EOEPCA/um-common-scim-client.svg?style=flat-square
+[forks-url]: https://github.com/EOEPCA/um-common-scim-client/network/members
+[stars-shield]: https://img.shields.io/github/stars/EOEPCA/um-common-scim-client.svg?style=flat-square
+[stars-url]: https://github.com/EOEPCA/um-common-scim-client/stargazers
+[issues-shield]: https://img.shields.io/github/issues/EOEPCA/um-common-scim-client.svg?style=flat-square
+[issues-url]: https://github.com/EOEPCA/um-common-scim-client/issues
+[license-shield]: https://img.shields.io/github/license/EOEPCA/um-common-scim-client.svg?style=flat-square
+[license-url]: https://github.com/EOEPCA/um-common-scim-client/blob/master/LICENSE
+[build-shield]: https://www.travis-ci.com/EOEPCA/um-common-scim-client.svg?branch=master
