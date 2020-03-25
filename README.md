@@ -16,7 +16,7 @@
   <a href="https://github.com/EOEPCA/um-common-scim-client">
   </a>
 
-  <h3 align="center">eoepca-scim</h3>
+  <h3 align="center">EOEPCA-SCIM</h3>
 
   <p align="center">
     Template for developing an EOEPCA Library
