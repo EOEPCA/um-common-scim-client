@@ -50,6 +50,7 @@ def getUserInum(userID, scimUserEndpoint, token):
     query = "userName eq \"" + userID +"\""
     payload = { 'filter' : query }
     res = requests.get(scimUserEndpoint, headers=headers, params=payload, verify=False)
+    print(res.json())
     user = (res.json())['Resources']
     return user[0]['id']
 
@@ -60,32 +61,32 @@ def getUserAttributes( inum, scimUserEndpoint, token):
     return res.json()
 
 def addUserAttribute( inum, attributePath, newValue, scimUserEndpoint, token):
-    #TODO finish implementation
-    headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : createBearerToken(token) }
+    url = scimUserEndpoint + "/" + inum
+    headers = { 'content-type': "application/scim+json", 'Authorization' : createBearerToken(token) }
     operation = "{ \"op\":\"add\", \"path\": \"" + attributePath + "\", \"value\":\"" + newValue + "\"}"
     payload = "{ \"Operations\" : [" + operation + "]}"
     print(payload)
-    res = requests.patch(scimUserEndpoint, data=payload, headers=headers, verify=False)
+    res = requests.patch(url, data=payload, headers=headers, verify=False)
     print(res)
     return
 
 def editUserAttribute( inum, attributePath, newValue, scimUserEndpoint, token):
-    #TODO finish implementation
-    headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : createBearerToken(token) }
+    url = scimUserEndpoint + "/" + inum
+    headers = { 'content-type': "application/scim+json", 'Authorization' : createBearerToken(token) }
     operation = "{ \"op\":\"replace\", \"path\": \"" + attributePath + "\", \"value\":\"" + newValue + "\"}"
     payload = "{ \"Operations\" : [" + operation + "]}"
     print(payload)
-    res = requests.patch(scimUserEndpoint, data=payload, headers=headers, verify=False)
+    res = requests.patch(url, data=payload, headers=headers, verify=False)
     print(res)
     return
 
-def removeUserAttribute( inum, attributePath, scimUserEndpoint):
-    #TODO finish implementation
-    headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : createBearerToken(token) }
+def removeUserAttribute( inum, attributePath, scimUserEndpoint, token):
+    url = scimUserEndpoint + "/" + inum
+    headers = { 'content-type': "application/scim+json", 'Authorization' : createBearerToken(token) }
     operation = "{ \"op\":\"remove\", \"path\": \"" + attributePath + "\"}"
     payload = "{ \"Operations\" : [" + operation + "]}"
     print(payload)
-    res = requests.patch(scimUserEndpoint, data=payload, headers=headers, verify=False)
+    res = requests.patch(url, data=payload, headers=headers, verify=False)
     print(res)
     return
 
@@ -95,5 +96,7 @@ credentials = createCredentials('@!C28A.A0EC.7CA4.6154!0001!94C2.0974!0008!DF1E.
 token = getAccessToken("https://demoexample.gluu.org/oxauth/restv1/token", credentials, ["https://demoexample.gluu.org/identity/authentication/getauthcode"])
 inum = getUserInum('tiago@test.com', 'https://demoexample.gluu.org/identity/restv1/scim/v2/Users', token)
 print(getUserAttributes(inum, 'https://demoexample.gluu.org/identity/restv1/scim/v2/Users', token))
-print(editUserAttribute(inum, "name.familyName", "M Fernandes", 'https://demoexample.gluu.org/identity/restv1/scim/v2/Users', token))
-print(getUserAttributes(inum, 'https://demoexample.gluu.org/identity/restv1/scim/v2/Users', token))
+#print(editUserAttribute(inum, "name.familyName", "M Fernandes", 'https://demoexample.gluu.org/identity/restv1/scim/v2/Users', token))
+#print(addUserAttribute(inum, "name.middleName", "M", 'https://demoexample.gluu.org/identity/restv1/scim/v2/Users', token))
+#print(removeUserAttribute(inum, "name.middleName", 'https://demoexample.gluu.org/identity/restv1/scim/v2/Users', token))
+#print(getUserAttributes(inum, 'https://demoexample.gluu.org/identity/restv1/scim/v2/Users', token))
