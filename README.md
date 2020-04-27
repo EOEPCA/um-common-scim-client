@@ -68,7 +68,7 @@ This is an auxiliary Python3 library to allow a client to dynamically register w
 Download the library using pip
 
 ```sh
-pip install eoepca_scim
+pip install eoepca-scim
 ```
 
 Enable Test Mode in Gluu by following these procedures: [Protection using Test Mode](https://gluu.org/docs/gluu-server/3.1.6/user-management/scim2/#protection-using-test-mode)
