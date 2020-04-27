@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import eoepca_scim
 import json
 
 def initEOEPCAScim():
