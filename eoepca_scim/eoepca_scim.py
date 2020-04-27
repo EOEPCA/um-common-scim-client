@@ -210,4 +210,3 @@ class EOEPCA_Scim:
             payload += "\"" + response.strip() + "\" "
         payload = payload[:-2] + "]}"
         return payload
-
