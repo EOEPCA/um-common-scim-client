@@ -7,7 +7,7 @@ import traceback
 import urllib
 import logging
 
-class EOEPCA_Scim():
+class EOEPCA_Scim:
     __REGISTER_ENDPOINT = "/oxauth/restv1/register"
     __TOKEN_ENDPOINT = "/oxauth/restv1/token"
     __SCIM_USERS_ENDPOINT = "/identity/restv1/scim/v2/Users"

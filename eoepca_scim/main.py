@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-import eoepca_scim
+from eoepca_scim import *
 
 # *** Use this for auto-contained examples ***
 
 def main():
+#    importlib.import_module('eoepca_scim')
     #Determine Gluu host address
     gluuHost = "https://demoexample.gluu.org"
 
@@ -20,10 +21,10 @@ def main():
     clientJSON = scim_client.registerClient(clientName=clientName, grantTypes=grantTypes, redirectURIs=redirectURIs, logoutURI=logoutURI, responseTypes=responseTypes, scopes=scopes)
     print(clientJSON)
 
-    #User to which we want to obtain all attributes
+    # #User to which we want to obtain all attributes
     userID = "test@test.com"
 
-    #Get user attributes
+    # #Get user attributes
     attributes = scim_client.getUserAttributes(userID=userID)
     print(attributes)
 
