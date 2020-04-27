@@ -1,7 +1,7 @@
 <!--
 ***
 *** To avoid retyping too much info. Do a search and replace for the following:
-*** um-common-scim-client, eoepca-scim
+*** um-common-scim-client, eoepca_scim
 -->
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
@@ -16,7 +16,7 @@
   <a href="https://github.com/EOEPCA/um-common-scim-client">
   </a>
 
-  <h3 align="center">EOEPCA-SCIM</h3>
+  <h3 align="center">eoepca_scim</h3>
 
   <p align="center">
     Auxiliary Python3 library that allows a client to dynamically register with Gluu and access SCIM endpoints to get/add/edit/remove user attributes
@@ -68,7 +68,7 @@ This is an auxiliary Python3 library to allow a client to dynamically register w
 Download the library using pip
 
 ```sh
-pip install eoepca-scim
+pip install eoepca_scim
 ```
 
 Enable Test Mode in Gluu by following these procedures: [Protection using Test Mode](https://gluu.org/docs/gluu-server/3.1.6/user-management/scim2/#protection-using-test-mode)
@@ -76,7 +76,7 @@ Enable Test Mode in Gluu by following these procedures: [Protection using Test M
 ### Testing
 
 ```sh
-pytest eoepca-scim/tests
+pytest eoepca_scim/tests
 ```
 
 ## Documentation & Usage
