@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-from eoepca_scim import *
-
+from eoepca_scim import EOEPCA_Scim
 # *** Use this for auto-contained examples ***
 
 def main():
