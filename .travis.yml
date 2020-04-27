@@ -5,7 +5,7 @@ jobs:
   include:
     - stage: Testing
       install: pip install -r eoepca_scim/requirements.txt
-      script: pytest eoepca_scim/tests
+      script: pytest eoepca_scim/tests/*
 
 deploy:
   provider: pypi
