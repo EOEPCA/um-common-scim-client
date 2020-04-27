@@ -14,7 +14,7 @@ class EOEPCA_Scim:
 
     def __init__(self, host, clientID=None, clientSecret=None):
         self.client_id = clientID
-        self.client_scret = clientSecret
+        self.client_secret = clientSecret
         self.host = host
         self.access_token = None
 
