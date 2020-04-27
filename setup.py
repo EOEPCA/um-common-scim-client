@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-  name = 'eoepca-scim',
+  name = 'eoepca_scim',
   version = '1.0',
   author = 'EOEPCA',
   author_email = 'eoepca.systemteam@telespazio.com',
