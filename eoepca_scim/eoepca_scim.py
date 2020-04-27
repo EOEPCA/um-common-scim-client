@@ -119,7 +119,7 @@ class EOEPCA_Scim:
             return None
         url = self.host + self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
         if self.access_token != None:
-            headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : self.createBearerToken(self.access_token)}
+            headers = { 'content-type': "application/scim+json", 'Authorization' : self.createBearerToken(self.access_token)}
         else:
             headers = { 'content-type': 'application/x-www-form-urlencoded', 'Authorization': self.createBearerToken('0')}
         operation = "{ \"op\":\"add\", \"path\": \"" + attributePath + "\", \"value\":\"" + newValue + "\"}"
@@ -147,7 +147,7 @@ class EOEPCA_Scim:
             return None
         url = self.host + self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
         if self.access_token != None:
-            headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : self.createBearerToken(self.access_token)}
+            headers = { 'content-type': "application/scim+json", 'Authorization' : self.createBearerToken(self.access_token)}
         else:
             headers = { 'content-type': 'application/x-www-form-urlencoded', 'Authorization': self.createBearerToken('0')}
         operation = "{ \"op\":\"replace\", \"path\": \"" + attributePath + "\", \"value\":\"" + newValue + "\"}"
@@ -174,7 +174,7 @@ class EOEPCA_Scim:
             return None
         url = self.host + self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
         if self.access_token != None:
-            headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : self.createBearerToken(self.access_token)}
+            headers = { 'content-type': "application/scim+json", 'Authorization' : self.createBearerToken(self.access_token)}
         else:
             headers = { 'content-type': 'application/x-www-form-urlencoded', 'Authorization': self.createBearerToken('0')}
         operation = "{ \"op\":\"remove\", \"path\": \"" + attributePath + "\"}"

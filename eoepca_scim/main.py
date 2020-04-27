@@ -3,7 +3,6 @@ from eoepca_scim import EOEPCA_Scim
 # *** Use this for auto-contained examples ***
 
 def main():
-#    importlib.import_module('eoepca_scim')
     #Determine Gluu host address
     gluuHost = "https://demoexample.gluu.org"
 
@@ -18,14 +17,27 @@ def main():
     responseTypes=[]
     scopes=["openid", "oxd", "permission"]
     clientJSON = scim_client.registerClient(clientName=clientName, grantTypes=grantTypes, redirectURIs=redirectURIs, logoutURI=logoutURI, responseTypes=responseTypes, scopes=scopes)
-    print(clientJSON)
 
-    # #User to which we want to obtain all attributes
+    #User to which we want to obtain all attributes
     userID = "test@test.com"
 
-    # #Get user attributes
+    #Get user attributes
     attributes = scim_client.getUserAttributes(userID=userID)
     print(attributes)
+
+    #Add a new attribute
+    attributePath="name.middleName"
+    newValue="Middle"
+    scim_client.addUserAttribute(userID=userID, attributePath=attributePath, newValue=newValue)
+    
+    #Modify an attribute
+    attributePath="name.familyName"
+    newValue="Last"
+    scim_client.editUserAttribute(userID=userID, attributePath=attributePath, newValue=newValue)
+
+    #Remove an attribute
+    attributePath="name.middleName"
+    scim_client.removeUserAttribute(userID=userID, attributePath=attributePath)
 
 if __name__ == "__main__":
      
