@@ -2,4 +2,4 @@
 
 # from MyLibrary.thing import another_thing
 
-from eoepca_scim import EOEPCA_Scim
+from eoepca_scim_client import EOEPCA_Scim
