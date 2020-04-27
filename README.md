@@ -19,7 +19,7 @@
   <h3 align="center">EOEPCA-SCIM</h3>
 
   <p align="center">
-    Template for developing an EOEPCA Library
+    Auxiliary Python3 library that allows a client to dynamically register with Gluu and access SCIM endpoints to get/add/edit/remove user attributes
     <br />
     <a href="https://github.com/EOEPCA/um-common-scim-client"><strong>Explore the docs</strong></a>
     .
@@ -48,6 +48,8 @@
 
 ## About The Project
 
+This is an auxiliary Python3 library to allow a client to dynamically register with Gluu. At the same time, it allows to get all user attributes, and also add/edit/remove specific attributes, by using SCIM endpoints. At this time, it only allows for OAuth tokens.
+
 ### Built With
 
 - [Python](https://www.python.org//)
@@ -55,24 +57,21 @@
 - [YAML](https://yaml.org/)
 - [Travis CI](https://travis-ci.com/)
 
-## Getting Started
-
-To get a local copy up and running follow these simple steps.
-
 ### Prerequisites
-
-This is an example of how to list things you need to use the software and how to install them.
 
 - [Python 3](https://www.python.org//)
 - [Pip](https://pip.pypa.io/en/stable/)
+- [Requests](https://pypi.org/project/requests/)
 
 ### Installation
 
-Just download the library using pip
+Download the library using pip
 
 ```sh
 pip install eoepca-scim
 ```
+
+Enable Test Mode in Gluu by following these procedures: [Protection using Test Mode](https://gluu.org/docs/gluu-server/3.1.6/user-management/scim2/#protection-using-test-mode)
 
 ### Testing
 
@@ -83,6 +82,8 @@ pytest eoepca-scim/tests
 ## Documentation & Usage
 
 The component documentation can be found at https://eoepca.github.io/um-common-scim-client/.
+
+For example usages, check main.py
 
 ## Roadmap
 

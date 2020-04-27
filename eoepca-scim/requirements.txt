@@ -1,2 +1,2 @@
-# EXAMPLE REQUIREMENTS - PLEASE REPLACE WITH REAL ONES
-# Remember to update setup.py
+requests==2.23.0
+urllib3==1.25.9
