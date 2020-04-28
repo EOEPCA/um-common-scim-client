@@ -1,2 +1,0 @@
-# EXAMPLE REQUIREMENTS - PLEASE REPLACE WITH REAL ONES
-# Remember to update setup.py
