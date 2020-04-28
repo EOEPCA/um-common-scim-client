@@ -5,9 +5,9 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
   name = 'eoepca-scim',
-  version = '2.3.2',
+  version = '0.0.1',
   author = 'EOEPCA',
-  author_email = 'eoepca.systemteam@telespazio.com',
+  author_email = 'angel.lozano@deimos-space.com',
   description = 'Python library to interact with SCIM protocol',
   long_description = long_description,
   long_description_content_type="text/markdown",

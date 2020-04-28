@@ -4,8 +4,8 @@ python: 3.6.9
 jobs:
   include:
     - stage: Testing
-      install: pip install -r eoepca_scim/requirements.txt
-      script: pytest eoepca_scim/tests/*
+      install: pip install -r eoepca-scim/requirements.txt
+      script: pytest eoepca-scim/tests
 
 deploy:
   provider: pypi
