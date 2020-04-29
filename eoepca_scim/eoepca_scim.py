@@ -17,6 +17,7 @@ class EOEPCA_Scim:
         self.client_secret = clientSecret
         self.host = host
         self.access_token = None
+        self.authRetries = 3
 
     def registerClient(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes):
         logging.info("Registering new client...")
@@ -39,7 +40,8 @@ class EOEPCA_Scim:
         try:
             res = requests.post(self.host + self.__TOKEN_ENDPOINT, headers=headers, data=payload, verify=False)
             status = res.status_code
-            self.access_token = res.json()["access_token"]
+            if status == 200:
+                self.access_token = res.json()["access_token"]
         except:
             logging.error(traceback.format_exc())
         return
@@ -72,8 +74,12 @@ class EOEPCA_Scim:
             msg = res.text
         except:
             logging.error(traceback.format_exc())
-        if status == 401:
+        if self.authRetries == 0:
+            logging.error("Maximum number of attempts reached, re-register client.")
+            return "0"
+        elif status == 401:
             self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            self.authRetries -= 1
             return self.__getUserInum(userID)
         elif status == 500:
             self.access_token = None
@@ -81,6 +87,7 @@ class EOEPCA_Scim:
         user = (res.json())['Resources']
         self.client_id = user[0]['id']
         logging.info("User INUM found!")
+        self.authRetries = 3
         return user[0]['id']
 
     def getUserAttributes(self, userID):
@@ -103,13 +110,18 @@ class EOEPCA_Scim:
             logging.info(msg)
         except:
             logging.error(traceback.format_exc())
-        if status == 401:
+        if self.authRetries == 0:
+            logging.error("Maximum number of attempts reached, re-register client.")
+            return "0"
+        elif status == 401:
             self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            self.authRetries -= 1
             return self.getUserAttributes(userID)
         elif status == 500:
             self.access_token = None
             return self.getUserAttributes(userID)
         logging.info("User attributes found, returning.")
+        self.authRetries = 3
         return res.json()
 
     def addUserAttribute(self, userID, attributePath, newValue):
@@ -132,13 +144,18 @@ class EOEPCA_Scim:
             msg = res.text
         except:
             logging.error(traceback.format_exc())
-        if status == 401:
+        if self.authRetries == 0:
+            logging.error("Maximum number of attempts reached, re-register client.")
+            return 401
+        elif status == 401:
             self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            self.authRetries -= 1
             return self.addUserAttribute(userID, attributePath, newValue)
         elif status == 500:
             self.access_token = None
             return self.addUserAttribute(userID, attributePath, newValue)
         logging.info("Attribute successfully added.")
+        self.authRetries = 3
         return status
 
     def editUserAttribute(self, userID, attributePath, newValue):
@@ -160,12 +177,17 @@ class EOEPCA_Scim:
             msg = res.text
         except:
             logging.error(traceback.format_exc())
-        if status == 401:
+        if self.authRetries == 0:
+            logging.error("Maximum number of attempts reached, re-register client.")
+            self.authRetries -= 1
+            return 401
+        elif status == 401:
             self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
             return self.editUserAttribute(userID, attributePath, newValue)
         elif status == 500:
             self.access_token = None
             return self.editUserAttribute(userID, attributePath, newValue)
+        self.authRetries = 3
         return status
 
     def removeUserAttribute(self, userID, attributePath):
@@ -187,12 +209,17 @@ class EOEPCA_Scim:
             msg = res.text
         except:
             logging.error(traceback.format_exc())
-        if status == 401:
+        if self.authRetries == 0:
+            logging.error("Maximum number of attempts reached, re-register client.")
+            return 401
+        elif status == 401:
             self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            self.authRetries -= 1
             return self.removeUserAttribute(userID, attributePath)
         elif status == 500:
             self.access_token = None
             return self.removeUserAttribute(userID, attributePath)
+        self.authRetries = 3
         return status
 
     def clientPayloadCreation(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes):
