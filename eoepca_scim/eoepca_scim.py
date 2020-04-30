@@ -6,18 +6,33 @@ import time
 import traceback
 import urllib
 import logging
+import datetime
+from jwkest.jws import JWS
+from jwkest.jwk import RSAKey, import_rsa_key_from_file, load_jwks_from_url
+from jwkest.jwk import load_jwks
 
 class EOEPCA_Scim:
     __REGISTER_ENDPOINT = "/oxauth/restv1/register"
     __TOKEN_ENDPOINT = "/oxauth/restv1/token"
     __SCIM_USERS_ENDPOINT = "/identity/restv1/scim/v2/Users"
+    __JWKS_ENDPOINT = "/oxauth/restv1/jwks"
 
-    def __init__(self, host, clientID=None, clientSecret=None):
+    def __init__(self, host, clientID=None, clientSecret=None, jks_path=None):
         self.client_id = clientID
         self.client_secret = clientSecret
         self.host = host
+        self.jks_path = jks_path
         self.access_token = None
         self.authRetries = 3
+        self.usingUMA = 0
+
+    def __getRSAKey(self, rsaNumber):
+        #headers = { 'content-type': "application/json"}
+        #res = requests.get(self.host+self.__JWKS_ENDPOINT, headers=headers, verify=False)
+        key_set = load_jwks_from_url(self.host+self.__JWKS_ENDPOINT, verify=False)
+        return key_set[rsaNumber]
+        #return res.json()['keys'][rsaNumber]
+
 
     def registerClient(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes):
         logging.info("Registering new client...")
@@ -29,6 +44,46 @@ class EOEPCA_Scim:
         self.client_secret = matrix['client_secret']
         logging.info("New client " + clientName + " successfully created!")
         return matrix
+
+    def __create_jwt(self):
+        print("Create JWT BEGIN")
+        key = self.__getRSAKey(0)
+        #print(key)
+        #rsajwk = RSAKey(kid=rsa['kid'],key=rsa['x5c'],n=rsa['n'])
+        rsajwk = RSAKey(key=key)
+        #rsajwk = RSAKey(key=import_rsa_key_from_file(self.jks_path))
+        print(rsajwk)
+        payload = { 
+                    "iss": self.client_id,
+                    "sub": self.client_id,
+                    "aud": self.host+"/oxauth/restv1/token",
+                    "jti": datetime.datetime.today().strftime('%Y%m%d%s'),
+                    "exp": int(time.time())+300
+                }
+        print(payload)
+        _jws = JWS(payload, alg="RS512")
+        #print(_jws)
+        print("Create JWT END")
+        return _jws.sign_compact(keys=[rsajwk])
+
+    def __getUMAAccessToken(self, ticket, jwt):
+        print("UMA Token invalid, generating new one...")
+        if self.client_id == None:
+            print("No client id found, please register first.")
+            return None
+        headers = { 'content-type': "application/x-www-form-urlencoded", 'cache-control': "no-cache" }
+        payload = {'grant_type' : "urn:ietf:params:oauth:grant-type:uma-ticket", 'client_id' : self.client_id, 'client_assertion_type': "urn:ietf:params:oauth:client-assertion-type:jwt-bearer", 'ticket': ticket, 'client_assertion': jwt }
+        msg = "Host unreachable"
+        status = 404
+        try:
+            res = requests.post(self.host+self.__TOKEN_ENDPOINT, data=payload, headers=headers, verify=False)
+            status = res.status_code
+            print(res.text)
+            if status == 200:
+                self.access_token = res.json()["access_token"]
+        except:
+            print(traceback.format_exc())
+        return
 
     def __getOAuthAccessToken(self, credentials):
         logging.info("OAuth Token invalid, generating new one...")
@@ -75,10 +130,18 @@ class EOEPCA_Scim:
         except:
             logging.error(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
-            return "0"
-        elif status == 401:
-            self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            if self.usingUMA == 0:
+                logging.info("Switching to UMA authentication")
+                self.usingUMA = 1
+                self.authRetries = 3
+            else:                
+                logging.error("Maximum number of attempts reached, re-register client.")
+                return "0"
+        if status == 401:
+            if self.usingUMA == 1:
+                self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
+            else:
+                self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
             self.authRetries -= 1
             return self.__getUserInum(userID)
         elif status == 500:
@@ -111,10 +174,17 @@ class EOEPCA_Scim:
         except:
             logging.error(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
-            return "0"
-        elif status == 401:
-            self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            if self.usingUMA == 0:
+                self.usingUMA = 1
+                self.authRetries = 3
+            else:
+                logging.error("Maximum number of attempts reached, re-register client.")
+                return "0"
+        if status == 401:
+            if self.usingUMA == 1:
+                self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
+            else:
+                self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
             self.authRetries -= 1
             return self.getUserAttributes(userID)
         elif status == 500:
@@ -145,10 +215,17 @@ class EOEPCA_Scim:
         except:
             logging.error(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
-            return 401
-        elif status == 401:
-            self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            if self.usingUMA == 0:
+                self.usingUMA = 1
+                self.authRetries = 3
+            else:
+                logging.error("Maximum number of attempts reached, re-register client.")
+                return "0"
+        if status == 401:
+            if self.usingUMA == 1:
+                self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
+            else:
+                self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
             self.authRetries -= 1
             return self.addUserAttribute(userID, attributePath, newValue)
         elif status == 500:
@@ -178,11 +255,17 @@ class EOEPCA_Scim:
         except:
             logging.error(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
-            self.authRetries -= 1
-            return 401
-        elif status == 401:
-            self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            if self.usingUMA == 0:
+                self.usingUMA = 1
+                self.authRetries = 3
+            else:
+                logging.error("Maximum number of attempts reached, re-register client.")
+                return 401
+        if status == 401:
+            if self.usingUMA == 1:
+                self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
+            else:
+                self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
             return self.editUserAttribute(userID, attributePath, newValue)
         elif status == 500:
             self.access_token = None
@@ -210,10 +293,17 @@ class EOEPCA_Scim:
         except:
             logging.error(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
-            return 401
-        elif status == 401:
-            self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            if self.usingUMA == 0:
+                self.usingUMA = 1
+                self.authRetries = 3
+            else:
+                logging.error("Maximum number of attempts reached, re-register client.")
+                return 401
+        if status == 401:
+            if self.usingUMA == 1:
+                self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
+            else:
+                self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
             self.authRetries -= 1
             return self.removeUserAttribute(userID, attributePath)
         elif status == 500:
