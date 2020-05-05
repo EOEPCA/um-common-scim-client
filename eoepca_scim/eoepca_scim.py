@@ -8,8 +8,9 @@ import urllib
 import logging
 import datetime
 from jwkest.jws import JWS
-from jwkest.jwk import RSAKey, import_rsa_key_from_file, load_jwks_from_url
+from jwkest.jwk import RSAKey, import_rsa_key_from_file, load_jwks_from_url, import_rsa_key
 from jwkest.jwk import load_jwks
+from Crypto.PublicKey import RSA
 
 class EOEPCA_Scim:
     __REGISTER_ENDPOINT = "/oxauth/restv1/register"
@@ -26,11 +27,34 @@ class EOEPCA_Scim:
         self.authRetries = 3
         self.usingUMA = 0
 
-    def __getRSAKey(self, rsaNumber):
+    def __generateRSAKeyPair(self):
+        _rsakey = RSA.generate(2048)
+        self._private_key = _rsakey.exportKey()
+        self._public_key = _rsakey.publickey().exportKey()
+        return
+
+    def __getRSAPrivateKey(self):
         #headers = { 'content-type': "application/json"}
         #res = requests.get(self.host+self.__JWKS_ENDPOINT, headers=headers, verify=False)
-        key_set = load_jwks_from_url(self.host+self.__JWKS_ENDPOINT, verify=False)
-        return key_set[rsaNumber]
+        
+        #key_set = load_jwks_from_url(self.host+self.__JWKS_ENDPOINT, verify=False)
+
+        #_rsakey = RSA.generate(2048)
+
+        #self._private_key = _rsakey.exportKey()
+        #print("#private key#")
+        #print(self._private_key)
+
+        #self._public_key = _rsakey.publickey().exportKey()
+        #print("#public key#")
+        #print(self._public_key)
+
+        #print(_rsakey)
+        #_rsajwk = RSAKey(kid="rsa1", key=_rsakey)
+
+        #return _rsakey
+        return self._private_key
+        #return key_set[rsaNumber]
         #return res.json()['keys'][rsaNumber]
 
 
@@ -47,24 +71,29 @@ class EOEPCA_Scim:
 
     def __create_jwt(self):
         print("Create JWT BEGIN")
-        key = self.__getRSAKey(0)
+        _key = self.__getRSAPrivateKey()
+        #_key = RSA.generate(2048)
         #print(key)
         #rsajwk = RSAKey(kid=rsa['kid'],key=rsa['x5c'],n=rsa['n'])
-        rsajwk = RSAKey(key=key)
+        #_rsajwk = RSAKey(kid="rsa1", key=_key)
+        _rsajwk = RSAKey(kid="rsa1", key=import_rsa_key(_key))
+        #_rsajwk = RSAKey(kid="07a5d076-bab1-455e-ab5e-ae67c192bd22", key=import_rsa_key_from_file("/home/vagrant/um-common-scim-client/eoepca_scim/scim-rp.jks"))
+        #rsajwk = RSAKey(key=key)
         #rsajwk = RSAKey(key=import_rsa_key_from_file(self.jks_path))
-        print(rsajwk)
-        payload = { 
+        print(_rsajwk)
+        _payload = { 
                     "iss": self.client_id,
                     "sub": self.client_id,
                     "aud": self.host+"/oxauth/restv1/token",
                     "jti": datetime.datetime.today().strftime('%Y%m%d%s'),
                     "exp": int(time.time())+300
                 }
-        print(payload)
-        _jws = JWS(payload, alg="RS512")
+        #print(_payload)
+        #_jws = JWS(_payload, alg="RS512")
+        _jws = JWS(_payload, alg="RS256")
         #print(_jws)
         print("Create JWT END")
-        return _jws.sign_compact(keys=[rsajwk])
+        return _jws.sign_compact(keys=[_rsajwk])
 
     def __getUMAAccessToken(self, ticket, jwt):
         print("UMA Token invalid, generating new one...")
@@ -79,6 +108,7 @@ class EOEPCA_Scim:
             res = requests.post(self.host+self.__TOKEN_ENDPOINT, data=payload, headers=headers, verify=False)
             status = res.status_code
             print(res.text)
+            print(res.headers)
             if status == 200:
                 self.access_token = res.json()["access_token"]
         except:
@@ -309,6 +339,47 @@ class EOEPCA_Scim:
         elif status == 500:
             self.access_token = None
             return self.removeUserAttribute(userID, attributePath)
+        self.authRetries = 3
+        return status
+
+    def deleteUser(self, userID):
+        logging.info("Deleting user " + userID)
+        if self.client_id == None:
+            logging.info("No client id found, please register first.")
+            return None
+        url = self.host + self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
+        if self.access_token != None:
+            headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : self.createBearerToken(self.access_token)}
+        else:
+            headers = { 'content-type': 'application/x-www-form-urlencoded', 'Authorization': self.createBearerToken('0')}
+        msg = "Host unreachable"
+        status = 404
+        try:
+            res = requests.delete(url, headers=headers, verify=False)
+            status = res.status_code
+            msg = res.text
+            logging.info(status)
+            logging.info(msg)
+        except:
+            logging.error(traceback.format_exc())
+        if self.authRetries == 0:
+            if self.usingUMA == 0:
+                self.usingUMA = 1
+                self.authRetries = 3
+            else:
+                logging.error("Maximum number of attempts reached, re-register client.")
+                return 0
+        if status == 401:
+            if self.usingUMA == 1:
+                self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
+            else:
+                self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            self.authRetries -= 1
+            return self.getUserAttributes(userID)
+        elif status == 500:
+            self.access_token = None
+            return self.getUserAttributes(userID)
+        logging.info("User deleted.")
         self.authRetries = 3
         return status
 
