@@ -18,50 +18,43 @@ class EOEPCA_Scim:
     __SCIM_USERS_ENDPOINT = "/identity/restv1/scim/v2/Users"
     __JWKS_ENDPOINT = "/oxauth/restv1/jwks"
 
-    def __init__(self, host, clientID=None, clientSecret=None, jks_path=None):
+    def __init__(self, host, clientID=None, clientSecret=None, jks_path=None, kid=None):
         self.client_id = clientID
         self.client_secret = clientSecret
         self.host = host
         self.jks_path = jks_path
+        self._kid = kid
         self.access_token = None
         self.authRetries = 3
-        self.usingUMA = 0
+        self.usingUMA = 0 if self.jks_path == None else 1
 
     def __generateRSAKeyPair(self):
         _rsakey = RSA.generate(2048)
         self._private_key = _rsakey.exportKey()
         self._public_key = _rsakey.publickey().exportKey()
+
+        file_out = open("private.pem", "wb")
+        file_out.write(self._private_key)
+        file_out.close()
+
+        file_out = open("public.pem", "wb")
+        file_out.write(public_key)
+        file_out.close()
         return
 
     def __getRSAPrivateKey(self):
-        #headers = { 'content-type': "application/json"}
-        #res = requests.get(self.host+self.__JWKS_ENDPOINT, headers=headers, verify=False)
-        
-        #key_set = load_jwks_from_url(self.host+self.__JWKS_ENDPOINT, verify=False)
-
-        #_rsakey = RSA.generate(2048)
-
-        #self._private_key = _rsakey.exportKey()
-        #print("#private key#")
-        #print(self._private_key)
-
-        #self._public_key = _rsakey.publickey().exportKey()
-        #print("#public key#")
-        #print(self._public_key)
-
-        #print(_rsakey)
-        #_rsajwk = RSAKey(kid="rsa1", key=_rsakey)
-
-        #return _rsakey
         return self._private_key
-        #return key_set[rsaNumber]
-        #return res.json()['keys'][rsaNumber]
 
+    def __getRSAPublicKey(self):
+        return self._public_key
 
-    def registerClient(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes):
+    def registerClient(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, useUMA=0):
         logging.info("Registering new client...")
         headers = { 'content-type': "application/scim+json"}
-        payload = self.clientPayloadCreation(clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes)
+        if(useUMA == 1):
+            self.__generateRSAKeyPair
+            self.usingUMA = 1
+        payload = self.clientPayloadCreation(clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, useUMA)
         res = requests.post(self.host+self.__REGISTER_ENDPOINT, data=payload, headers=headers, verify=False)
         matrix = res.json()
         self.client_id = matrix['client_id']
@@ -70,35 +63,24 @@ class EOEPCA_Scim:
         return matrix
 
     def __create_jwt(self):
-        print("Create JWT BEGIN")
-        _key = self.__getRSAPrivateKey()
-        #_key = RSA.generate(2048)
-        #print(key)
-        #rsajwk = RSAKey(kid=rsa['kid'],key=rsa['x5c'],n=rsa['n'])
-        #_rsajwk = RSAKey(kid="rsa1", key=_key)
-        _rsajwk = RSAKey(kid="rsa1", key=import_rsa_key(_key))
-        #_rsajwk = RSAKey(kid="07a5d076-bab1-455e-ab5e-ae67c192bd22", key=import_rsa_key_from_file("/home/vagrant/um-common-scim-client/eoepca_scim/scim-rp.jks"))
-        #rsajwk = RSAKey(key=key)
-        #rsajwk = RSAKey(key=import_rsa_key_from_file(self.jks_path))
-        print(_rsajwk)
+        if self.jks_path != None:
+            _rsajwk = RSAKey(kid=self._kid, key=import_rsa_key_from_file(self.jks_path))
+        else:
+            _rsajwk = RSAKey(key=import_rsa_key(self._private_key))
         _payload = { 
                     "iss": self.client_id,
                     "sub": self.client_id,
                     "aud": self.host+"/oxauth/restv1/token",
                     "jti": datetime.datetime.today().strftime('%Y%m%d%s'),
-                    "exp": int(time.time())+300
+                    "exp": int(time.time())+3600
                 }
-        #print(_payload)
-        #_jws = JWS(_payload, alg="RS512")
         _jws = JWS(_payload, alg="RS256")
-        #print(_jws)
-        print("Create JWT END")
         return _jws.sign_compact(keys=[_rsajwk])
 
     def __getUMAAccessToken(self, ticket, jwt):
-        print("UMA Token invalid, generating new one...")
+        logging.info("UMA Token invalid, generating new one...")
         if self.client_id == None:
-            print("No client id found, please register first.")
+            logging.info("No client id found, please register first.")
             return None
         headers = { 'content-type': "application/x-www-form-urlencoded", 'cache-control': "no-cache" }
         payload = {'grant_type' : "urn:ietf:params:oauth:grant-type:uma-ticket", 'client_id' : self.client_id, 'client_assertion_type': "urn:ietf:params:oauth:client-assertion-type:jwt-bearer", 'ticket': ticket, 'client_assertion': jwt }
@@ -107,12 +89,10 @@ class EOEPCA_Scim:
         try:
             res = requests.post(self.host+self.__TOKEN_ENDPOINT, data=payload, headers=headers, verify=False)
             status = res.status_code
-            print(res.text)
-            print(res.headers)
             if status == 200:
                 self.access_token = res.json()["access_token"]
         except:
-            print(traceback.format_exc())
+            logging.error(traceback.format_exc())
         return
 
     def __getOAuthAccessToken(self, credentials):
@@ -383,7 +363,7 @@ class EOEPCA_Scim:
         self.authRetries = 3
         return status
 
-    def clientPayloadCreation(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes):
+    def clientPayloadCreation(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, useUMA=0):
         payload = "{ \"client_name\": \"" + clientName + "\", \"grant_types\":["
         for grant in grantTypes:
             payload += "\"" + grant.strip() + "\", "
@@ -396,5 +376,8 @@ class EOEPCA_Scim:
         payload = payload[:-1] + "\", \"response_types\": [  "
         for response in responseTypes:
             payload += "\"" + response.strip() + "\" "
-        payload = payload[:-2] + "]}"
+        payload = payload[:-2] + "]"
+        if useUMA == 1:
+            payload += ", \"jwks\": \"{\"keys\": [ " + str(RSAKey(key=import_rsa_key(_key))) + "]}\""
+        payload += "}"
         return payload
