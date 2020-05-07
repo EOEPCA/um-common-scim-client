@@ -48,7 +48,7 @@
 
 ## About The Project
 
-This is an auxiliary Python3 library to allow a client to dynamically register with Gluu. At the same time, it allows to get all user attributes, and also add/edit/remove specific attributes, by using SCIM endpoints. At this time, it only allows for OAuth tokens.
+This is an auxiliary Python3 library to allow a client to dynamically register with Gluu. At the same time, it allows to get all user attributes, and also add/edit/remove specific attributes, by using SCIM endpointsWith both OAuth and UMA tokens.
 
 ### Built With
 
@@ -62,6 +62,8 @@ This is an auxiliary Python3 library to allow a client to dynamically register w
 - [Python 3](https://www.python.org//)
 - [Pip](https://pip.pypa.io/en/stable/)
 - [Requests](https://pypi.org/project/requests/)
+- [Pyjwkest](https://pypi.org/project/pyjwkest/)
+- [Pycrypto](https://pypi.org/project/pycrypto/)
 
 ### Installation
 
@@ -72,12 +74,7 @@ pip install eoepca-scim
 ```
 
 Enable Test Mode in Gluu by following these procedures: [Protection using Test Mode](https://gluu.org/docs/gluu-server/3.1.6/user-management/scim2/#protection-using-test-mode)
-
-### Testing
-
-```sh
-pytest eoepca_scim/tests
-```
+Disable Test Mode and Enable UMA by following these procedures: [Protection using UMA](https://gluu.org/docs/gluu-server/3.1.6/user-management/scim2/#protection-using-uma)
 
 ## Documentation & Usage
 

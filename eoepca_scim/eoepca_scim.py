@@ -23,7 +23,7 @@ class EOEPCA_Scim:
         self.client_secret = clientSecret
         self.host = host
         self.jks_path = jks_path
-        self._kid = kid
+        self._kid = kid if kid != None else "RSA1"
         self.access_token = None
         self.authRetries = 3
         self.usingUMA = 0 if self.jks_path == None else 1
@@ -38,8 +38,9 @@ class EOEPCA_Scim:
         file_out.close()
 
         file_out = open("public.pem", "wb")
-        file_out.write(public_key)
+        file_out.write(self._public_key)
         file_out.close()
+
         return
 
     def __getRSAPrivateKey(self):
@@ -51,8 +52,8 @@ class EOEPCA_Scim:
     def registerClient(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, useUMA=0):
         logging.info("Registering new client...")
         headers = { 'content-type': "application/scim+json"}
-        if(useUMA == 1):
-            self.__generateRSAKeyPair
+        if useUMA == 1:
+            self.__generateRSAKeyPair()
             self.usingUMA = 1
         payload = self.clientPayloadCreation(clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, useUMA)
         res = requests.post(self.host+self.__REGISTER_ENDPOINT, data=payload, headers=headers, verify=False)
@@ -66,11 +67,11 @@ class EOEPCA_Scim:
         if self.jks_path != None:
             _rsajwk = RSAKey(kid=self._kid, key=import_rsa_key_from_file(self.jks_path))
         else:
-            _rsajwk = RSAKey(key=import_rsa_key(self._private_key))
+            _rsajwk = RSAKey(kid=self._kid, key=import_rsa_key(self.__getRSAPrivateKey()))
         _payload = { 
                     "iss": self.client_id,
                     "sub": self.client_id,
-                    "aud": self.host+"/oxauth/restv1/token",
+                    "aud": self.host+self.__TOKEN_ENDPOINT,
                     "jti": datetime.datetime.today().strftime('%Y%m%d%s'),
                     "exp": int(time.time())+3600
                 }
@@ -140,13 +141,8 @@ class EOEPCA_Scim:
         except:
             logging.error(traceback.format_exc())
         if self.authRetries == 0:
-            if self.usingUMA == 0:
-                logging.info("Switching to UMA authentication")
-                self.usingUMA = 1
-                self.authRetries = 3
-            else:                
-                logging.error("Maximum number of attempts reached, re-register client.")
-                return "0"
+            logging.error("Maximum number of attempts reached, re-register client.")
+            return "0"
         if status == 401:
             if self.usingUMA == 1:
                 self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
@@ -179,17 +175,11 @@ class EOEPCA_Scim:
             res = requests.get(url, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
-            logging.info(status)
-            logging.info(msg)
         except:
             logging.error(traceback.format_exc())
         if self.authRetries == 0:
-            if self.usingUMA == 0:
-                self.usingUMA = 1
-                self.authRetries = 3
-            else:
-                logging.error("Maximum number of attempts reached, re-register client.")
-                return "0"
+            logging.error("Maximum number of attempts reached, re-register client.")
+            return "0"
         if status == 401:
             if self.usingUMA == 1:
                 self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
@@ -225,12 +215,8 @@ class EOEPCA_Scim:
         except:
             logging.error(traceback.format_exc())
         if self.authRetries == 0:
-            if self.usingUMA == 0:
-                self.usingUMA = 1
-                self.authRetries = 3
-            else:
-                logging.error("Maximum number of attempts reached, re-register client.")
-                return "0"
+            logging.error("Maximum number of attempts reached, re-register client.")
+            return "0"
         if status == 401:
             if self.usingUMA == 1:
                 self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
@@ -265,12 +251,8 @@ class EOEPCA_Scim:
         except:
             logging.error(traceback.format_exc())
         if self.authRetries == 0:
-            if self.usingUMA == 0:
-                self.usingUMA = 1
-                self.authRetries = 3
-            else:
-                logging.error("Maximum number of attempts reached, re-register client.")
-                return 401
+            logging.error("Maximum number of attempts reached, re-register client.")
+            return 401
         if status == 401:
             if self.usingUMA == 1:
                 self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
@@ -303,12 +285,8 @@ class EOEPCA_Scim:
         except:
             logging.error(traceback.format_exc())
         if self.authRetries == 0:
-            if self.usingUMA == 0:
-                self.usingUMA = 1
-                self.authRetries = 3
-            else:
-                logging.error("Maximum number of attempts reached, re-register client.")
-                return 401
+            logging.error("Maximum number of attempts reached, re-register client.")
+            return 401
         if status == 401:
             if self.usingUMA == 1:
                 self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
@@ -338,17 +316,11 @@ class EOEPCA_Scim:
             res = requests.delete(url, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
-            logging.info(status)
-            logging.info(msg)
         except:
             logging.error(traceback.format_exc())
         if self.authRetries == 0:
-            if self.usingUMA == 0:
-                self.usingUMA = 1
-                self.authRetries = 3
-            else:
-                logging.error("Maximum number of attempts reached, re-register client.")
-                return 0
+            logging.error("Maximum number of attempts reached, re-register client.")
+            return 0
         if status == 401:
             if self.usingUMA == 1:
                 self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
@@ -378,6 +350,7 @@ class EOEPCA_Scim:
             payload += "\"" + response.strip() + "\" "
         payload = payload[:-2] + "]"
         if useUMA == 1:
-            payload += ", \"jwks\": \"{\"keys\": [ " + str(RSAKey(key=import_rsa_key(_key))) + "]}\""
+            payload += ", \"jwks\": {\"keys\": [ " + str(RSAKey(kid=self._kid, key=import_rsa_key(self.__getRSAPublicKey()))) + "]}"
+            payload += ", \"token_endpoint_auth_method\": \"private_key_jwt\""
         payload += "}"
         return payload
