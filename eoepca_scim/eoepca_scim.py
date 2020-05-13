@@ -347,7 +347,7 @@ class EOEPCA_Scim:
             payload += scope.strip() + " "
         payload = payload[:-1] + "\", \"response_types\": [  "
         for response in responseTypes:
-            payload += "\"" + response.strip() + "\" "
+            payload += "\"" + response.strip() + "\",  "
         payload = payload[:-2] + "]"
         if useUMA == 1:
             payload += ", \"jwks\": {\"keys\": [ " + str(RSAKey(kid=self._kid, key=import_rsa_key(self.__getRSAPublicKey()))) + "]}"
