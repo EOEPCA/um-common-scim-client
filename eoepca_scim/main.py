@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from eoepca_scim import EOEPCA_Scim
+from eoepca_scim import EOEPCA_Scim, ENDPOINT_AUTH_CLIENT_POST, ENDPOINT_AUTH_CLIENT_PRIVATE_KEY_JWT
 import logging
 # *** Use this for auto-contained examples ***
 
@@ -26,9 +26,9 @@ def main():
     scopes=["openid", "oxd", "permission"]
     #UMA scope example
     #scopes=["https://demoexample.gluu.org/oxauth/restv1/uma/scopes/scim_access"]
-    #Register call, with useUMA=1 if UMA is being used
-    clientJSON = scim_client.registerClient(clientName=clientName, grantTypes=grantTypes, redirectURIs=redirectURIs, logoutURI=logoutURI, responseTypes=responseTypes, scopes=scopes)
-    #clientJSON = scim_client.registerClient(clientName=clientName, grantTypes=grantTypes, redirectURIs=redirectURIs, logoutURI=logoutURI, responseTypes=responseTypes, scopes=scopes, useUMA=1)
+    #Register call, with useJWK=1 if JWK is being used
+    clientJSON = scim_client.registerClient(clientName=clientName, grantTypes=grantTypes, redirectURIs=redirectURIs, logoutURI=logoutURI, responseTypes=responseTypes, scopes=scopes, token_endpoint_auth_method= ENDPOINT_AUTH_CLIENT_POST)
+    #clientJSON = scim_client.registerClient(clientName=clientName, grantTypes=grantTypes, redirectURIs=redirectURIs, logoutURI=logoutURI, responseTypes=responseTypes, scopes=scopes, token_endpoint_auth_method= ENDPOINT_AUTH_CLIENT_PRIVATE_KEY_JWT , useJWK=1)
     print(clientJSON)
 
     #User to which we want to obtain all attributes
