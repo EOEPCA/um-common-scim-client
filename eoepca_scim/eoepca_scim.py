@@ -11,6 +11,8 @@ from jwkest.jws import JWS
 from jwkest.jwk import RSAKey, import_rsa_key_from_file, load_jwks_from_url, import_rsa_key
 from jwkest.jwk import load_jwks
 from Crypto.PublicKey import RSA
+from WellKnownHandler import WellKnownHandler, TYPE_SCIM, TYPE_OIDC, KEY_SCIM_USER_ENDPOINT, KEY_OIDC_TOKEN_ENDPOINT, KEY_OIDC_REGISTRATION_ENDPOINT, KEY_OIDC_SUPPORTED_AUTH_METHODS_TOKEN_ENDPOINT
+
 
 # token Endpoint Auth Methods
 # TODO: Check against WellKnownHandler's permitted auths
@@ -22,20 +24,20 @@ ENDPOINT_AUTH_CLIENT_TLS = "tls_client_auth"
 ENDPOINT_AUTH_CLIENT_TLS_SELF_SIGNED = "self_signed_tls_client_auth"
 
 class EOEPCA_Scim:
-    __REGISTER_ENDPOINT = "/oxauth/restv1/register"
-    __TOKEN_ENDPOINT = "/oxauth/restv1/token"
-    __SCIM_USERS_ENDPOINT = "/identity/restv1/scim/v2/Users"
-    __JWTS_ENDPOINT = "/oxauth/restv1/jwks"
 
     def __init__(self, host, clientID=None, clientSecret=None, jks_path=None, kid=None):
         self.client_id = clientID
         self.client_secret = clientSecret
-        self.host = host
         self.jks_path = jks_path
         self._kid = kid if kid != None else "RSA1"
         self.access_token = None
         self.authRetries = 3
         self.usingJWT = 0 if self.jks_path == None else 1
+
+        self.wkh = WellKnownHandler(host, secure=False) #TODO: Secure configurable??
+        self.__SCIM_USERS_ENDPOINT = self.wkh.get(TYPE_SCIM, KEY_SCIM_USER_ENDPOINT)
+        self.__TOKEN_ENDPOINT = self.wkh.get(TYPE_OIDC, KEY_OIDC_TOKEN_ENDPOINT)
+        self.__REGISTER_ENDPOINT = self.wkh.get(TYPE_OIDC, KEY_OIDC_REGISTRATION_ENDPOINT)
 
     def __generateRSAKeyPair(self):
         _rsakey = RSA.generate(2048)
@@ -65,7 +67,7 @@ class EOEPCA_Scim:
             self.__generateRSAKeyPair()
             self.usingJWT = 1
         payload = self.clientPayloadCreation(clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, token_endpoint_auth_method, useJWT)
-        res = requests.post(self.host+self.__REGISTER_ENDPOINT, data=payload, headers=headers, verify=False)
+        res = requests.post(self.__REGISTER_ENDPOINT, data=payload, headers=headers, verify=False)
         matrix = res.json()
         self.client_id = matrix['client_id']
         self.client_secret = matrix['client_secret']
@@ -80,7 +82,7 @@ class EOEPCA_Scim:
         _payload = { 
                     "iss": self.client_id,
                     "sub": self.client_id,
-                    "aud": self.host+self.__TOKEN_ENDPOINT,
+                    "aud": self.__TOKEN_ENDPOINT,
                     "jti": datetime.datetime.today().strftime('%Y%m%d%s'),
                     "exp": int(time.time())+3600
                 }
@@ -97,7 +99,7 @@ class EOEPCA_Scim:
         msg = "Host unreachable"
         status = 404
         try:
-            res = requests.post(self.host+self.__TOKEN_ENDPOINT, data=payload, headers=headers, verify=False)
+            res = requests.post(self.__TOKEN_ENDPOINT, data=payload, headers=headers, verify=False)
             status = res.status_code
             if status == 200:
                 self.access_token = res.json()["access_token"]
@@ -113,7 +115,7 @@ class EOEPCA_Scim:
         headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : credentials }
         payload = {'grant_type' : 'client_credentials'}
         try:
-            res = requests.post(self.host + self.__TOKEN_ENDPOINT, headers=headers, data=payload, verify=False)
+            res = requests.post(self.__TOKEN_ENDPOINT, headers=headers, data=payload, verify=False)
             status = res.status_code
             if status == 200:
                 self.access_token = res.json()["access_token"]
@@ -142,7 +144,7 @@ class EOEPCA_Scim:
         status = 404
         query = "userName eq \"" + userID +"\""
         payload = { 'filter' : query }
-        url = self.host+self.__SCIM_USERS_ENDPOINT
+        url = __SCIM_USERS_ENDPOINT 
         try:
             res = requests.get(url, headers=headers, params=payload, verify=False)
             status = res.status_code
@@ -173,7 +175,7 @@ class EOEPCA_Scim:
         if self.client_id == None:
             logging.info("No client id found, please register first.")
             return None
-        url = self.host + self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
+        url = self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
         if self.access_token != None:
             headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : self.createBearerToken(self.access_token)}
         else:
@@ -208,7 +210,7 @@ class EOEPCA_Scim:
         if self.client_id == None:
             logging.info("No client id found, please register first.")
             return None
-        url = self.host + self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
+        url = self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
         if self.access_token != None:
             headers = { 'content-type': "application/scim+json", 'Authorization' : self.createBearerToken(self.access_token)}
         else:
@@ -244,7 +246,7 @@ class EOEPCA_Scim:
         if self.client_id == None:
             logging.info("No client id found, please register first.")
             return None
-        url = self.host + self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
+        url = self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
         if self.access_token != None:
             headers = { 'content-type': "application/scim+json", 'Authorization' : self.createBearerToken(self.access_token)}
         else:
@@ -278,7 +280,7 @@ class EOEPCA_Scim:
         if self.client_id == None:
             logging.info("No client id found, please register first.")
             return None
-        url = self.host + self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
+        url = self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
         if self.access_token != None:
             headers = { 'content-type': "application/scim+json", 'Authorization' : self.createBearerToken(self.access_token)}
         else:
@@ -314,7 +316,7 @@ class EOEPCA_Scim:
         if self.client_id == None:
             logging.info("No client id found, please register first.")
             return None
-        url = self.host + self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
+        url = self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
         if self.access_token != None:
             headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : self.createBearerToken(self.access_token)}
         else:
@@ -345,6 +347,12 @@ class EOEPCA_Scim:
         return status
 
     def clientPayloadCreation(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, token_endpoint_auth_method, useJWT=0):
+        # Check the auth method is allowed by Auth Server.
+        # Since this value can change dynamically, we check it each time this function is called.
+        allowed_auth_methods = self.wkh.get(TYPE_OIDC, KEY_OIDC_SUPPORTED_AUTH_METHODS_TOKEN_ENDPOINT)
+        if token_endpoint_auth_method not in allowed_auth_methods:
+            raise Exception("Auth method '"+token_endpoint_auth_method+"' is not currently allowed by Auth Server: "+str(allowed_auth_methods))
+
         payload = "{ \"client_name\": \"" + clientName + "\", \"grant_types\":["
         for grant in grantTypes:
             payload += "\"" + grant.strip() + "\", "
