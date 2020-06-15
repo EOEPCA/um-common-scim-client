@@ -243,6 +243,7 @@ class EOEPCA_Scim:
         return status
 
     def editUserAttribute(self, userID, attributePath, newValue):
+        logging.info("Editing user " + userID + "'s attribute " + attributePath)
         if self.client_id == None:
             logging.info("No client id found, please register first.")
             return None
@@ -269,6 +270,7 @@ class EOEPCA_Scim:
                 self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
             else:
                 self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            self.authRetries -= 1
             return self.editUserAttribute(userID, attributePath, newValue)
         elif status == 500:
             self.access_token = None
@@ -277,6 +279,7 @@ class EOEPCA_Scim:
         return status
 
     def removeUserAttribute(self, userID, attributePath):
+        logging.info("Removing user " + userID + "'s attribute " + attributePath)
         if self.client_id == None:
             logging.info("No client id found, please register first.")
             return None
