@@ -101,10 +101,12 @@ class EOEPCA_Scim:
         try:
             res = requests.post(self.__TOKEN_ENDPOINT, data=payload, headers=headers, verify=False)
             status = res.status_code
+            logging.info("Get UMA Token reply code: " + status)
             if status == 200:
                 self.access_token = res.json()["access_token"]
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Get UMA Token: Exception occured!")
+            logging.info(traceback.format_exc())
         return
 
     def __getOAuthAccessToken(self, credentials):
@@ -117,10 +119,12 @@ class EOEPCA_Scim:
         try:
             res = requests.post(self.__TOKEN_ENDPOINT, headers=headers, data=payload, verify=False)
             status = res.status_code
+            logging.info("Get OAuth Token reply code: " + status)
             if status == 200:
                 self.access_token = res.json()["access_token"]
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Get OAuth Token: Exception occured!")
+            logging.info(traceback.format_exc())
         return
 
     def createOAuthCredentials(self, client_id, client_secret):
@@ -144,15 +148,17 @@ class EOEPCA_Scim:
         status = 404
         query = "userName eq \"" + userID +"\""
         payload = { 'filter' : query }
-        url = __SCIM_USERS_ENDPOINT 
+        url = self.__SCIM_USERS_ENDPOINT 
         try:
             res = requests.get(url, headers=headers, params=payload, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Get User INUM reply code: " + status)
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Get User INUM: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return "0"
         if status == 401:
             if self.usingJWT == 1:
@@ -186,10 +192,12 @@ class EOEPCA_Scim:
             res = requests.get(url, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Get User Attributes reply code: " + status)
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Get User Attributes: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return "0"
         if status == 401:
             if self.usingJWT == 1:
@@ -223,10 +231,12 @@ class EOEPCA_Scim:
             res = requests.patch(url, data=payload, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Add User Attribute reply code: " + status)
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Add User Attribute: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return "0"
         if status == 401:
             if self.usingJWT == 1:
@@ -260,10 +270,12 @@ class EOEPCA_Scim:
             res = requests.patch(url, data=payload, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Edit User Attribute reply code: " + status)
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Edit User Attribute: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return 401
         if status == 401:
             if self.usingJWT == 1:
@@ -296,10 +308,12 @@ class EOEPCA_Scim:
             res = requests.patch(url, data=payload, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Remove User Attribute reply code: " + status)
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Remove User Attribute: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return 401
         if status == 401:
             if self.usingJWT == 1:
@@ -330,10 +344,12 @@ class EOEPCA_Scim:
             res = requests.delete(url, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Delete User reply code: " + status)
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Delete User: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return 0
         if status == 401:
             if self.usingJWT == 1:
