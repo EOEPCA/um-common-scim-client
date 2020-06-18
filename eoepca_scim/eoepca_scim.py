@@ -101,7 +101,7 @@ class EOEPCA_Scim:
         try:
             res = requests.post(self.__TOKEN_ENDPOINT, data=payload, headers=headers, verify=False)
             status = res.status_code
-            logging.info("Get UMA Token reply code: " + status)
+            logging.info("Get UMA Token reply code: " + str(status))
             if status == 200:
                 self.access_token = res.json()["access_token"]
         except:
@@ -119,7 +119,7 @@ class EOEPCA_Scim:
         try:
             res = requests.post(self.__TOKEN_ENDPOINT, headers=headers, data=payload, verify=False)
             status = res.status_code
-            logging.info("Get OAuth Token reply code: " + status)
+            logging.info("Get OAuth Token reply code: " + str(status))
             if status == 200:
                 self.access_token = res.json()["access_token"]
         except:
@@ -153,7 +153,7 @@ class EOEPCA_Scim:
             res = requests.get(url, headers=headers, params=payload, verify=False)
             status = res.status_code
             msg = res.text
-            logging.info("Get User INUM reply code: " + status)
+            logging.info("Get User INUM reply code: " + str(status))
         except:
             logging.info("Get User INUM: Exception occured!")
             logging.info(traceback.format_exc())
@@ -192,7 +192,7 @@ class EOEPCA_Scim:
             res = requests.get(url, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
-            logging.info("Get User Attributes reply code: " + status)
+            logging.info("Get User Attributes reply code: " + str(status))
         except:
             logging.info("Get User Attributes: Exception occured!")
             logging.info(traceback.format_exc())
@@ -231,7 +231,7 @@ class EOEPCA_Scim:
             res = requests.patch(url, data=payload, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
-            logging.info("Add User Attribute reply code: " + status)
+            logging.info("Add User Attribute reply code: " + str(status))
         except:
             logging.info("Add User Attribute: Exception occured!")
             logging.info(traceback.format_exc())
@@ -270,7 +270,7 @@ class EOEPCA_Scim:
             res = requests.patch(url, data=payload, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
-            logging.info("Edit User Attribute reply code: " + status)
+            logging.info("Edit User Attribute reply code: " + str(status))
         except:
             logging.info("Edit User Attribute: Exception occured!")
             logging.info(traceback.format_exc())
@@ -308,7 +308,7 @@ class EOEPCA_Scim:
             res = requests.patch(url, data=payload, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
-            logging.info("Remove User Attribute reply code: " + status)
+            logging.info("Remove User Attribute reply code: " + str(status))
         except:
             logging.info("Remove User Attribute: Exception occured!")
             logging.info(traceback.format_exc())
@@ -344,7 +344,7 @@ class EOEPCA_Scim:
             res = requests.delete(url, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
-            logging.info("Delete User reply code: " + status)
+            logging.info("Delete User reply code: " + str(status))
         except:
             logging.info("Delete User: Exception occured!")
             logging.info(traceback.format_exc())
