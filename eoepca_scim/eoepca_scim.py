@@ -171,7 +171,44 @@ class EOEPCA_Scim:
             self.access_token = None
             return self.__getUserInum(userID)
         user = (res.json())['Resources']
-        self.client_id = user[0]['id']
+        logging.info("User INUM found!")
+        self.authRetries = 3
+        return user[0]['id']
+
+
+    def __getUserInumByEmail(self, userEmail):
+        logging.info("Fetching User INUM for user with email " + userEmail + "...")
+        if self.access_token != None:
+            headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : self.createBearerToken(self.access_token)}
+        else:
+            headers = { 'content-type': 'application/x-www-form-urlencoded', 'Authorization': self.createBearerToken('0')}
+        msg = "Host unreachable"
+        status = 404
+        query = "emails.value eq \"" + userEmail +"\""
+        payload = { 'filter' : query }
+        url = self.__SCIM_USERS_ENDPOINT 
+        try:
+            res = requests.get(url, headers=headers, params=payload, verify=False)
+            status = res.status_code
+            msg = res.text
+            logging.info("Get User INUM by Email reply code: " + str(status))
+        except:
+            logging.info("Get User INUM by Email: Exception occured!")
+            logging.info(traceback.format_exc())
+        if self.authRetries == 0:
+            logging.info("Maximum number of attempts reached, re-register client.")
+            return "0"
+        if status == 401:
+            if self.usingJWT == 1:
+                self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
+            else:
+                self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            self.authRetries -= 1
+            return self.__getUserInumByEmail(userEmail)
+        elif status == 500:
+            self.access_token = None
+            return self.__getUserInumByEmail(userEmail)
+        user = (res.json())['Resources']
         logging.info("User INUM found!")
         self.authRetries = 3
         return user[0]['id']
@@ -328,12 +365,12 @@ class EOEPCA_Scim:
         self.authRetries = 3
         return status
 
-    def deleteUser(self, userID):
-        logging.info("Deleting user " + userID)
+    def deleteUser(self, userEmail):
+        logging.info("Deleting user with email " + userEmail)
         if self.client_id == None:
             logging.info("No client id found, please register first.")
             return None
-        url = self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
+        url = self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInumByEmail(userEmail)
         if self.access_token != None:
             headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : self.createBearerToken(self.access_token)}
         else:
@@ -357,10 +394,10 @@ class EOEPCA_Scim:
             else:
                 self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
             self.authRetries -= 1
-            return self.getUserAttributes(userID)
+            return self.getUserAttributes(userEmail)
         elif status == 500:
             self.access_token = None
-            return self.getUserAttributes(userID)
+            return self.getUserAttributes(userEmail)
         logging.info("User deleted.")
         self.authRetries = 3
         return status
