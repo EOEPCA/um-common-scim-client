@@ -101,10 +101,12 @@ class EOEPCA_Scim:
         try:
             res = requests.post(self.__TOKEN_ENDPOINT, data=payload, headers=headers, verify=False)
             status = res.status_code
+            logging.info("Get UMA Token reply code: " + str(status))
             if status == 200:
                 self.access_token = res.json()["access_token"]
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Get UMA Token: Exception occured!")
+            logging.info(traceback.format_exc())
         return
 
     def __getOAuthAccessToken(self, credentials):
@@ -117,10 +119,12 @@ class EOEPCA_Scim:
         try:
             res = requests.post(self.__TOKEN_ENDPOINT, headers=headers, data=payload, verify=False)
             status = res.status_code
+            logging.info("Get OAuth Token reply code: " + str(status))
             if status == 200:
                 self.access_token = res.json()["access_token"]
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Get OAuth Token: Exception occured!")
+            logging.info(traceback.format_exc())
         return
 
     def createOAuthCredentials(self, client_id, client_secret):
@@ -144,15 +148,17 @@ class EOEPCA_Scim:
         status = 404
         query = "userName eq \"" + userID +"\""
         payload = { 'filter' : query }
-        url = __SCIM_USERS_ENDPOINT 
+        url = self.__SCIM_USERS_ENDPOINT 
         try:
             res = requests.get(url, headers=headers, params=payload, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Get User INUM reply code: " + str(status))
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Get User INUM: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return "0"
         if status == 401:
             if self.usingJWT == 1:
@@ -165,7 +171,44 @@ class EOEPCA_Scim:
             self.access_token = None
             return self.__getUserInum(userID)
         user = (res.json())['Resources']
-        self.client_id = user[0]['id']
+        logging.info("User INUM found!")
+        self.authRetries = 3
+        return user[0]['id']
+
+
+    def __getUserInumByEmail(self, userEmail):
+        logging.info("Fetching User INUM for user with email " + userEmail + "...")
+        if self.access_token != None:
+            headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : self.createBearerToken(self.access_token)}
+        else:
+            headers = { 'content-type': 'application/x-www-form-urlencoded', 'Authorization': self.createBearerToken('0')}
+        msg = "Host unreachable"
+        status = 404
+        query = "emails.value eq \"" + userEmail +"\""
+        payload = { 'filter' : query }
+        url = self.__SCIM_USERS_ENDPOINT 
+        try:
+            res = requests.get(url, headers=headers, params=payload, verify=False)
+            status = res.status_code
+            msg = res.text
+            logging.info("Get User INUM by Email reply code: " + str(status))
+        except:
+            logging.info("Get User INUM by Email: Exception occured!")
+            logging.info(traceback.format_exc())
+        if self.authRetries == 0:
+            logging.info("Maximum number of attempts reached, re-register client.")
+            return "0"
+        if status == 401:
+            if self.usingJWT == 1:
+                self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
+            else:
+                self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            self.authRetries -= 1
+            return self.__getUserInumByEmail(userEmail)
+        elif status == 500:
+            self.access_token = None
+            return self.__getUserInumByEmail(userEmail)
+        user = (res.json())['Resources']
         logging.info("User INUM found!")
         self.authRetries = 3
         return user[0]['id']
@@ -186,10 +229,12 @@ class EOEPCA_Scim:
             res = requests.get(url, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Get User Attributes reply code: " + str(status))
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Get User Attributes: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return "0"
         if status == 401:
             if self.usingJWT == 1:
@@ -223,10 +268,12 @@ class EOEPCA_Scim:
             res = requests.patch(url, data=payload, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Add User Attribute reply code: " + str(status))
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Add User Attribute: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return "0"
         if status == 401:
             if self.usingJWT == 1:
@@ -260,10 +307,12 @@ class EOEPCA_Scim:
             res = requests.patch(url, data=payload, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Edit User Attribute reply code: " + str(status))
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Edit User Attribute: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return 401
         if status == 401:
             if self.usingJWT == 1:
@@ -296,10 +345,12 @@ class EOEPCA_Scim:
             res = requests.patch(url, data=payload, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Remove User Attribute reply code: " + str(status))
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Remove User Attribute: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return 401
         if status == 401:
             if self.usingJWT == 1:
@@ -314,12 +365,12 @@ class EOEPCA_Scim:
         self.authRetries = 3
         return status
 
-    def deleteUser(self, userID):
-        logging.info("Deleting user " + userID)
+    def deleteUser(self, userEmail):
+        logging.info("Deleting user with email " + userEmail)
         if self.client_id == None:
             logging.info("No client id found, please register first.")
             return None
-        url = self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
+        url = self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInumByEmail(userEmail)
         if self.access_token != None:
             headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : self.createBearerToken(self.access_token)}
         else:
@@ -330,10 +381,12 @@ class EOEPCA_Scim:
             res = requests.delete(url, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
+            logging.info("Delete User reply code: " + str(status))
         except:
-            logging.error(traceback.format_exc())
+            logging.info("Delete User: Exception occured!")
+            logging.info(traceback.format_exc())
         if self.authRetries == 0:
-            logging.error("Maximum number of attempts reached, re-register client.")
+            logging.info("Maximum number of attempts reached, re-register client.")
             return 0
         if status == 401:
             if self.usingJWT == 1:
@@ -341,10 +394,10 @@ class EOEPCA_Scim:
             else:
                 self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
             self.authRetries -= 1
-            return self.getUserAttributes(userID)
+            return self.getUserAttributes(userEmail)
         elif status == 500:
             self.access_token = None
-            return self.getUserAttributes(userID)
+            return self.getUserAttributes(userEmail)
         logging.info("User deleted.")
         self.authRetries = 3
         return status
