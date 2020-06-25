@@ -60,13 +60,13 @@ class EOEPCA_Scim:
     def __getRSAPublicKey(self):
         return self._public_key
 
-    def registerClient(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, token_endpoint_auth_method, useJWT=0):
+    def registerClient(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, token_endpoint_auth_method, useJWT=0, sectorIdentifier=None):
         logging.info("Registering new client...")
         headers = { 'content-type': "application/scim+json"}
         if useJWT == 1:
             self.__generateRSAKeyPair()
             self.usingJWT = 1
-        payload = self.clientPayloadCreation(clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, token_endpoint_auth_method, useJWT)
+        payload = self.clientPayloadCreation(clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT)
         res = requests.post(self.__REGISTER_ENDPOINT, data=payload, headers=headers, verify=False)
         matrix = res.json()
         self.client_id = matrix['client_id']
@@ -402,7 +402,7 @@ class EOEPCA_Scim:
         self.authRetries = 3
         return status
 
-    def clientPayloadCreation(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, token_endpoint_auth_method, useJWT=0):
+    def clientPayloadCreation(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT=0):
         # Check the auth method is allowed by Auth Server.
         # Since this value can change dynamically, we check it each time this function is called.
         allowed_auth_methods = self.wkh.get(TYPE_OIDC, KEY_OIDC_SUPPORTED_AUTH_METHODS_TOKEN_ENDPOINT)
@@ -418,7 +418,12 @@ class EOEPCA_Scim:
         payload = payload[:-2] + "], \"post_logout_redirect_uris\": [\""+ logoutURI +"\"], \"scope\": \""
         for scope in scopes:
             payload += scope.strip() + " "
-        payload = payload[:-1] + "\", \"response_types\": [  "
+        payload = payload[:-1] + "\", "
+        if sectorIdentifier is not None:
+            payload += "\"sector_identifier_uri\": "
+            payload += "\"" + sectorIdentifier.strip() + "\", "
+            payload = payload[:-2] + ", "
+        payload += "\"response_types\": [  "
         for response in responseTypes:
             payload += "\"" + response.strip() + "\",  "
         payload = payload[:-2] + "]"
