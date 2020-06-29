@@ -34,7 +34,11 @@ class EOEPCA_Scim:
         self.authRetries = 3
         self.usingJWT = 0 if self.jks_path == None else 1
 
-        self.wkh = WellKnownHandler(host, secure=False) #TODO: Secure configurable??
+        if "https://" in host or "http://" in host:
+            self.wkh = WellKnownHandler(host, secure=False)
+        elif:
+            self.wkh = WellKnownHandler("https://"+host, secure=False)
+
         self.__SCIM_USERS_ENDPOINT = self.wkh.get(TYPE_SCIM, KEY_SCIM_USER_ENDPOINT)
         self.__TOKEN_ENDPOINT = self.wkh.get(TYPE_OIDC, KEY_OIDC_TOKEN_ENDPOINT)
         self.__REGISTER_ENDPOINT = self.wkh.get(TYPE_OIDC, KEY_OIDC_REGISTRATION_ENDPOINT)
