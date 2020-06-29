@@ -36,7 +36,7 @@ class EOEPCA_Scim:
 
         if "https://" in host or "http://" in host:
             self.wkh = WellKnownHandler(host, secure=False)
-        elif:
+        else:
             self.wkh = WellKnownHandler("https://"+host, secure=False)
 
         self.__SCIM_USERS_ENDPOINT = self.wkh.get(TYPE_SCIM, KEY_SCIM_USER_ENDPOINT)
