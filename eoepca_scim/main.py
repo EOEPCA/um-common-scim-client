@@ -10,7 +10,7 @@ def main():
     gluuHost = "https://demoexample.gluu.org"
 
     #Initiate class
-    #scim_client = EOEPCA_Scim(host=gluuHost)
+    scim_client = EOEPCA_Scim(host=gluuHost)
 
     #Initiate class with an existing user (INUM), specifying the location of their private RSA key file and kid (key ID) for UMA purposes
     #When no kid is provided, default value "RSA1" is used
@@ -18,16 +18,21 @@ def main():
 
     #Register a new client, returns client information in JSON format
     clientName="TestClient"
-    grantTypes=["client_credentials", "urn:ietf:params:oauth:grant-type:uma-ticket"]
-    redirectURIs=["https://demoexample.gluu.org/login"]
+    grantTypes=["client_credentials", "urn:ietf:params:oauth:grant-type:uma-ticket", "password", "implicit"]
+    redirectURIs=["https://demoexample.gluu.org/web_ui/oauth/callback"]
     logoutURI="https://demoexample.gluu.org/logout"
     responseTypes=[]
+    #Sector identifier is OPTIONAL field
+    #Redirect URIs MUST be contained in Sector Identifier, if this is used
+    sectorIdentifier="https://demoexample.gluu.org/oxauth/sectoridentifier/9b473868-fa96-4fd1-a662-76e3663c9726"
+    #sectorIdentifiers=None
     #OpenID scope examples
     scopes=["openid", "oxd", "permission"]
     #UMA scope example
     #scopes=["https://demoexample.gluu.org/oxauth/restv1/uma/scopes/scim_access"]
     #Register call, with useJWK=1 if JWK is being used
-    clientJSON = scim_client.registerClient(clientName=clientName, grantTypes=grantTypes, redirectURIs=redirectURIs, logoutURI=logoutURI, responseTypes=responseTypes, scopes=scopes, token_endpoint_auth_method= ENDPOINT_AUTH_CLIENT_POST)
+    #clientJSON = scim_client.registerClient(clientName=clientName, grantTypes=grantTypes, redirectURIs=redirectURIs, logoutURI=logoutURI, responseTypes=responseTypes, scopes=scopes, token_endpoint_auth_method= ENDPOINT_AUTH_CLIENT_POST)
+    clientJSON = scim_client.registerClient(clientName=clientName, grantTypes=grantTypes, redirectURIs=redirectURIs, logoutURI=logoutURI, responseTypes=responseTypes, scopes=scopes, sectorIdentifier=sectorIdentifier, token_endpoint_auth_method= ENDPOINT_AUTH_CLIENT_POST)
     #clientJSON = scim_client.registerClient(clientName=clientName, grantTypes=grantTypes, redirectURIs=redirectURIs, logoutURI=logoutURI, responseTypes=responseTypes, scopes=scopes, token_endpoint_auth_method= ENDPOINT_AUTH_CLIENT_PRIVATE_KEY_JWT , useJWK=1)
     print(clientJSON)
 
