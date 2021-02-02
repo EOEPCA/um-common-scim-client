@@ -71,17 +71,12 @@ class EOEPCA_Scim:
             self.__generateRSAKeyPair()
             self.usingJWT = 1
         payload = self.clientPayloadCreation(clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT)
-        try:
-            res = requests.post(self.__REGISTER_ENDPOINT, data=payload, headers=headers, verify=False)
-            matrix = res.json()
-            self.client_id = matrix['client_id']
-            self.client_secret = matrix['client_secret']
-            logging.info("New client " + clientName + " successfully created!")
-            return matrix
-        except:
-            logging.info("Register client: Exception occured!")
-            logging.info(traceback.format_exc())
-        return
+        res = requests.post(self.__REGISTER_ENDPOINT, data=payload, headers=headers, verify=False)
+        matrix = res.json()
+        self.client_id = matrix['client_id']
+        self.client_secret = matrix['client_secret']
+        logging.info("New client " + clientName + " successfully created!")
+        return matrix
 
     def __create_jwt(self):
         if self.jks_path != None:
@@ -222,6 +217,43 @@ class EOEPCA_Scim:
         self.authRetries = 3
         return user[0]['id']
 
+    def get_users_by_query(self, query):
+        logging.info("Fetching User INUMs for users with query " + query + "...")
+        if self.access_token != None:
+            headers = { 'content-type': "application/x-www-form-urlencoded", 'Authorization' : self.createBearerToken(self.access_token)}
+        else:
+            headers = { 'content-type': 'application/x-www-form-urlencoded', 'Authorization': self.createBearerToken('0')}
+        msg = "Host unreachable"
+        status = 404
+        payload = { 'filter' : query }
+        url = self.__SCIM_USERS_ENDPOINT
+        try:
+            res = requests.get(url, headers=headers, params=payload, verify=False)
+            status = res.status_code
+            msg = res.text
+            logging.info("Get User INUM by query reply code: " + str(status))
+        except:
+            logging.info("Get User INUM by query: Exception occured!")
+            logging.info(traceback.format_exc())
+        if self.authRetries == 0:
+            logging.info("Maximum number of attempts reached, re-register client.")
+            return "0"
+        if status == 401:
+            if self.usingJWT == 1:
+                self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
+            else:
+                self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            self.authRetries -= 1
+            return self.get_users_by_query(query)
+        elif status == 500:
+            self.access_token = None
+            return self.get_users_by_query(query)
+        users = (res.json())['Resources']
+        logging.info("User INUM found!")
+        self.authRetries = 3
+        return users
+
+
     def getUserAttributes(self, userID):
         logging.info("Fetching user " + userID + " attributes...")
         if self.client_id == None:
@@ -244,7 +276,6 @@ class EOEPCA_Scim:
             logging.info(traceback.format_exc())
         if self.authRetries == 0:
             logging.info("Maximum number of attempts reached, re-register client.")
-            self.authRetries == 3
             return "0"
         if status == 401:
             if self.usingJWT == 1:
@@ -284,7 +315,6 @@ class EOEPCA_Scim:
             logging.info(traceback.format_exc())
         if self.authRetries == 0:
             logging.info("Maximum number of attempts reached, re-register client.")
-            self.authRetries == 3
             return "0"
         if status == 401:
             if self.usingJWT == 1:
@@ -324,7 +354,6 @@ class EOEPCA_Scim:
             logging.info(traceback.format_exc())
         if self.authRetries == 0:
             logging.info("Maximum number of attempts reached, re-register client.")
-            self.authRetries == 3
             return 401
         if status == 401:
             if self.usingJWT == 1:
@@ -363,7 +392,6 @@ class EOEPCA_Scim:
             logging.info(traceback.format_exc())
         if self.authRetries == 0:
             logging.info("Maximum number of attempts reached, re-register client.")
-            self.authRetries == 3
             return 401
         if status == 401:
             if self.usingJWT == 1:
@@ -400,7 +428,6 @@ class EOEPCA_Scim:
             logging.info(traceback.format_exc())
         if self.authRetries == 0:
             logging.info("Maximum number of attempts reached, re-register client.")
-            self.authRetries == 3
             return 0
         if status == 401:
             if self.usingJWT == 1:
