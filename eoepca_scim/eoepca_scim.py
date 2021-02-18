@@ -386,7 +386,6 @@ class EOEPCA_Scim:
             res = requests.patch(url, data=payload, headers=headers, verify=False)
             status = res.status_code
             msg = res.text
-            logging.info("Error in Edit: " + msg)
             logging.info("Edit User Attribute reply code: " + str(status))
         except:
             logging.info("Edit User Attribute: Exception occured!")
