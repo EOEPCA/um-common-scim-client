@@ -3,13 +3,9 @@
 
 name: Upload Python Package
 
-on:
+on: push
   # Triggers the workflow on push or pull request events but only for the develop branch
-  push:
-    branches:
-      - master
-      - develop
-      - 'release/**'
+  
     
 
 jobs:
