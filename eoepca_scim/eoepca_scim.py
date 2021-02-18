@@ -368,6 +368,44 @@ class EOEPCA_Scim:
         self.authRetries = 3
         return status
 
+    def editUserMultiValueAttribute(self, userID, attributePath, newValue):
+        logging.info("Editing user " + userID + "'s mutli value attribute " + attributePath)
+        if self.client_id == None:
+            logging.info("No client id found, please register first.")
+            return None
+        url = self.__SCIM_USERS_ENDPOINT + "/" + self.__getUserInum(userID)
+        if self.access_token != None:
+            headers = { 'content-type': "application/scim+json", 'Authorization' : self.createBearerToken(self.access_token)}
+        else:
+            headers = { 'content-type': 'application/x-www-form-urlencoded', 'Authorization': self.createBearerToken('0')}
+        operation = "{ \"op\":\"replace\", \"path\": \"" + attributePath + "\", \"value\":" + newValue + "}"
+        payload = "{ \"Operations\" : [" + operation + "]}"
+        msg = "Host unreachable"
+        status = 404
+        try:
+            res = requests.patch(url, data=payload, headers=headers, verify=False)
+            status = res.status_code
+            msg = res.text
+            logging.info("Edit User Attribute reply code: " + str(status))
+        except:
+            logging.info("Edit User Attribute: Exception occured!")
+            logging.info(traceback.format_exc())
+        if self.authRetries == 0:
+            logging.info("Maximum number of attempts reached, re-register client.")
+            return 401
+        if status == 401:
+            if self.usingJWT == 1:
+                self.__getUMAAccessToken(res.headers["WWW-Authenticate"].split("ticket=")[1], self.__create_jwt())
+            else:
+                self.__getOAuthAccessToken(self.createOAuthCredentials(self.client_id, self.client_secret))
+            self.authRetries -= 1
+            return self.editUserMultiValueAttribute(userID, attributePath, newValue)
+        elif status == 500:
+            self.access_token = None
+            return self.editUserMultiValueAttribute(userID, attributePath, newValue)
+        self.authRetries = 3
+        return status
+
     def removeUserAttribute(self, userID, attributePath):
         logging.info("Removing user " + userID + "'s attribute " + attributePath)
         if self.client_id == None:
