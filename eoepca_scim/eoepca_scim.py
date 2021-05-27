@@ -68,17 +68,31 @@ class EOEPCA_Scim:
 
     def registerClient(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, token_endpoint_auth_method, useJWT=0, sectorIdentifier=None):
         logging.info("Registering new client...")
-        headers = { 'content-type': "application/scim+json"}
+        headers = { 'content-type': "application/json"}
         if useJWT == 1:
             self.__generateRSAKeyPair()
             self.usingJWT = 1
         payload = self.clientPayloadCreation(clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT)
+        print("ENDPOINT: ",self.__REGISTER_ENDPOINT)
         res = requests.post(self.__REGISTER_ENDPOINT, data=payload, headers=headers, verify=False)
         matrix = res.json()
-        print(matrix)
+        print("MATRIX, ", matrix)
         self.client_id = matrix['client_id']
         self.client_secret = matrix['client_secret']
         logging.info("New client " + clientName + " successfully created!")
+        return matrix
+
+    def registerClientSwStatement(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, token_endpoint_auth_method, useJWT=0, sectorIdentifier=None):
+        logging.info("Registering new client with software statement...")
+        headers = { 'content-type': "application/json"}
+        payload = self.clientPayloadCreationSwStatement(clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT)
+        print("ENDPOINT: ",self.__REGISTER_ENDPOINT)
+        res = requests.post(self.__REGISTER_ENDPOINT, json=payload, headers=headers, verify=False)
+        matrix = res.json()
+        print("MATRIX, ", matrix)
+        self.client_id = matrix['client_id']
+        self.client_secret = matrix['client_secret']
+        logging.info("New client " + matrix['client_name'] + " successfully created!")
         return matrix
 
     def __create_jwt(self):
@@ -505,52 +519,43 @@ class EOEPCA_Scim:
             payload += "\"sector_identifier_uri\": "
             payload += "\"" + sectorIdentifier.strip() + "\", "
             payload = payload[:-2] + ", "
-        payload += "\"response_types\": [  "
+        payload += "\"response_types\": ["
         for response in responseTypes:
-            payload += "\"" + response.strip() + "\",  "
+            payload += "\"" + response.strip() + "\", "
         payload = payload[:-2] + "]"
         if useJWT == 1:
             payload += ", \"jwks\": {\"keys\": [ " + str(RSAKey(kid=self._kid, key=import_rsa_key(self.__getRSAPublicKey()))) + "]}"
         payload += ", \"token_endpoint_auth_method\": \""+token_endpoint_auth_method+"\""
+        payload += "}"
+        return payload
+
+    def clientPayloadCreationSwStatement(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT=0):
+        # Check the auth method is allowed by Auth Server.
+        # Since this value can change dynamically, we check it each time this function is called.
+        allowed_auth_methods = self.wkh.get(TYPE_OIDC, KEY_OIDC_SUPPORTED_AUTH_METHODS_TOKEN_ENDPOINT)
+        if token_endpoint_auth_method not in allowed_auth_methods:
+            raise Exception("Auth method '"+token_endpoint_auth_method+"' is not currently allowed by Auth Server: "+str(allowed_auth_methods))
+        
+        payload = {}
 
         self.__generateRSAKeyPair()
-        #_rsajwk = RSAKey(kid=self._kid, key=import_rsa_key(self.__getRSAPrivateKey()))
-        #StmtKey = JsonWebKey.import_key(self._public_key, {'kty': 'RSA'}).as_dict()
-        StmtKey = json.loads(str(RSAKey(kid=self._kid, key=import_rsa_key(self.__getRSAPublicKey()))).replace("'","\""))
-        StmtKey["alg"] = "RS256"
-        StmtKey["kid"] = "f9bf0a23-d16b-4630-8b38-f9f77a45e89d_sig_rs256"
-        StmtKey["n"] = "h_xDEhWZqwVUEgGPJEJDlhVmh7tLPVywfRFbW3JgM_pyRQMt91tolITH5YepKyWIA5nqv-uBrD4_2Yx1QlsqkKiVJbsQ04JKhkTzE2G_ooTjpFpXytorewV4UvgNVsAJFdMnhkQ2flXOvUPQo_4_GhOnPMjR3EcJt8LQceWBKfCHYdXYIxXqHm4_4XK_Jk_tGL8flr4UHU1yfCfJyEOZ1vJ7c9JS_aexK_a8GWPwqMsHGtGtMYX5clT6YJFQB3MzwtFdpKr4JJtXwwp0r_mVttv0Ix8wKZDUw759XRXX5nU3vJZ8tKFxsQ3ZsaZLYxPvz6B7kCWM0yzy3KdAwHDhnw"
-        SwSt = { 
-                    "iss": "myself",
-                    "sub": "myself",
-                    "aud": self.__TOKEN_ENDPOINT,
-                    "jti": datetime.datetime.today().strftime('%Y%m%d%s'),
-                    "exp": int(time.time())+3600,
-                    "software_id": "4NRB1-0XZABZI9E6-5SM3R",
-                    "client_name": "Example Statement-based Client",
-                    "client_uri": "https://client.example.net/",
-                    # "jwks": "{ \"keys\": ["+
-                    #             #StmtKey
-                    #             json.dumps(str(RSAKey(kid=self._kid, key=import_rsa_key(self.__getRSAPublicKey()))))
-                    #           +"]}"
-                    "jwks": { "keys": [
-                                        StmtKey
-                                      ]
-                            }
-                }
-        print(SwSt)
-        #_jws = JWS(SwSt, alg="RS256")
-        #SwSt = _jws.sign_compact(keys=[_rsajwk])
-        SwSt_encoded = jwt.encode(SwSt, self.__getRSAPrivateKey(), algorithm="RS256")
-
-        #TEST
-        #SwSt_encoded = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE1MTYyMzkwMjIsImV4cCI6MjUxOTgzOSwic29mdHdhcmVfc2NvcGVzIjoidXNlcl9uYW1lIGVtYWlsIn0.lOuEE1I_ZWAd6n1Wi0k2vSM1aVnY2_woKKtbyFaiBl7I8Rj4T9O8Awv5nsbuc3KXJotRMaAuDIrrvRdmEzsow8dwlBHtJ_pCVmH1IDp3OK37PNeCEN0U_KbaTmBbNeA4USRzk3HQF051DoYi0W5utoVLMkDK7NcPTzh17XP0rcK9B6t117jwLscaKBZGoClMsPlmCb83OQXs3HpbQMcOakOdbLSGEsV8_anuwL0pZ4GewPxuLfha9vhbWkitURc-WuG6IyS0nxZFqk0e4NsU8t1GAEDvggsZfdRQrl10EWgHm6efUeTanKqsBKaciVqdOffabR-pNwBeRtq8N2zFcg"
-
-        payload += ", \"software_statement\": \""+str(SwSt_encoded)+"\""
-
-        #print(str(SwSt_encoded))
-
-        payload += "}"
-        print("PAYLOAD")
-        print(payload)
+        swst_key = json.loads(str(RSAKey(kid=self._kid, key=import_rsa_key(self.__getRSAPublicKey()))).replace("'","\""))
+        payload_sw_stmt = {
+            "software_id": "4NRB1-0XZABZI9E6-5SM3R",
+            "client_name": clientName,
+            "client_uri": "https://client.example.net/",
+            "sector_identifier_uri": sectorIdentifier,
+            "response_types": [",".join(responseTypes)],
+            "grant_types": [",".join(grantTypes)],
+            "token_endpoint_auth_method": token_endpoint_auth_method,
+            "post_logout_redirect_uris": [logoutURI],
+            "redirect_uris": [",".join(redirectURIs)],
+            "scope": " ".join(scopes),
+            "jwks": { "keys": [
+                        swst_key
+                    ]
+            }
+        }
+        swst_encoded = jwt.encode(payload_sw_stmt, self.__getRSAPrivateKey(), algorithm="RS256", headers={"kid": self._kid})
+        payload["software_statement"] = swst_encoded.decode('UTF-8')
         return payload
