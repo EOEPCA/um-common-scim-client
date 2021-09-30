@@ -64,13 +64,13 @@ class EOEPCA_Scim:
     def __getRSAPublicKey(self):
         return self._public_key
 
-    def registerClient(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, token_endpoint_auth_method, useJWT=0, sectorIdentifier=None):
+    def registerClient(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, token_endpoint_auth_method, useJWT=0, sectorIdentifier=None, subject_type=None):
         logging.info("Registering new client...")
         headers = { 'content-type': "application/scim+json"}
         if useJWT == 1:
             self.__generateRSAKeyPair()
             self.usingJWT = 1
-        payload = self.clientPayloadCreation(clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT)
+        payload = self.clientPayloadCreation(clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT, subject_type)
         res = requests.post(self.__REGISTER_ENDPOINT, data=payload, headers=headers, verify=False)
         matrix = res.json()
         self.client_id = matrix['client_id']
@@ -481,7 +481,7 @@ class EOEPCA_Scim:
         self.authRetries = 3
         return status
 
-    def clientPayloadCreation(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT=0):
+    def clientPayloadCreation(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT=0, subject_type):
         # Check the auth method is allowed by Auth Server.
         # Since this value can change dynamically, we check it each time this function is called.
         allowed_auth_methods = self.wkh.get(TYPE_OIDC, KEY_OIDC_SUPPORTED_AUTH_METHODS_TOKEN_ENDPOINT)
@@ -509,5 +509,7 @@ class EOEPCA_Scim:
         if useJWT == 1:
             payload += ", \"jwks\": {\"keys\": [ " + str(RSAKey(kid=self._kid, key=import_rsa_key(self.__getRSAPublicKey()))) + "]}"
         payload += ", \"token_endpoint_auth_method\": \""+token_endpoint_auth_method+"\""
+        if subject_type:
+            payload += ", \"subject_type\": \""+subject_type+"\""
         payload += "}"
         return payload
