@@ -481,7 +481,7 @@ class EOEPCA_Scim:
         self.authRetries = 3
         return status
 
-    def clientPayloadCreation(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT=0, subject_type):
+    def clientPayloadCreation(self, clientName, grantTypes, redirectURIs, logoutURI, responseTypes, scopes, sectorIdentifier, token_endpoint_auth_method, useJWT=0, subject_type=None):
         # Check the auth method is allowed by Auth Server.
         # Since this value can change dynamically, we check it each time this function is called.
         allowed_auth_methods = self.wkh.get(TYPE_OIDC, KEY_OIDC_SUPPORTED_AUTH_METHODS_TOKEN_ENDPOINT)
