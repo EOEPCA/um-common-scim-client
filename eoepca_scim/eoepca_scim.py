@@ -25,14 +25,15 @@ ENDPOINT_AUTH_CLIENT_TLS_SELF_SIGNED = "self_signed_tls_client_auth"
 
 class EOEPCA_Scim:
 
-    def __init__(self, host, clientID=None, clientSecret=None, jks_path=None, kid=None):
+    def __init__(self, host, clientID=None, clientSecret=None, jks_private_path=None, jks_public_path=None, kid=None):
         self.client_id = clientID
         self.client_secret = clientSecret
-        self.jks_path = jks_path
+        self.jks_private_path = jks_private_path
+        self.jks_public_path = jks_public_path
         self._kid = kid if kid != None else "RSA1"
         self.access_token = None
         self.authRetries = 3
-        self.usingJWT = 0 if self.jks_path == None else 1
+        self.usingJWT = 0 if self.jks_private_path == None or self.jks_public_path == None else 1
 
         if "https://" in host or "http://" in host:
             self.wkh = WellKnownHandler(host, secure=False)
@@ -48,11 +49,11 @@ class EOEPCA_Scim:
         self._private_key = _rsakey.exportKey()
         self._public_key = _rsakey.publickey().exportKey()
 
-        file_out = open("private.pem", "wb")
+        file_out = open(self.jks_private_path, "wb")
         file_out.write(self._private_key)
         file_out.close()
 
-        file_out = open("public.pem", "wb")
+        file_out = open(self.jks_public_path, "wb")
         file_out.write(self._public_key)
         file_out.close()
 
@@ -79,8 +80,8 @@ class EOEPCA_Scim:
         return matrix
 
     def __create_jwt(self):
-        if self.jks_path != None:
-            _rsajwk = RSAKey(kid=self._kid, key=import_rsa_key_from_file(self.jks_path))
+        if self.jks_private_path != None:
+            _rsajwk = RSAKey(kid=self._kid, key=import_rsa_key_from_file(self.jks_private_path))
         else:
             _rsajwk = RSAKey(kid=self._kid, key=import_rsa_key(self.__getRSAPrivateKey()))
         _payload = { 
